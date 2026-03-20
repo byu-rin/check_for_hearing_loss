@@ -1,0 +1,34 @@
+# 어음청력검사 단어 목록
+# 형식: 단어[탭 또는 스페이스]/경로/파일.wav
+# 경로를 생략하면 TTS 또는 데모 모드로 재생됩니다.
+#
+바나나 audio/01_바나나.wav
+사과 audio/02_사과.wav
+수박 audio/03_수박.wav
+포도 audio/04_포도.wav
+딸기 audio/05_딸기.wav
+학교 audio/06_학교.wav
+가방 audio/07_가방.wav
+연필 audio/08_연필.wav
+책상 audio/09_책상.wav
+의자 audio/10_의자.wav
+하늘 audio/11_하늘.wav
+구름 audio/12_구름.wav
+바람 audio/13_바람.wav
+태양 audio/14_태양.wav
+달 audio/01_달.wav
+나무 audio/02_나무.wav
+강물 audio/03_강물.wav
+바다 audio/04_바다.wav
+산 audio/05_산.wav
+꽃 audio/06_꽃.wav
+새 audio/07_새.wav
+물고기 audio/08_물고기.wav
+토끼 audio/09_토끼.wav
+거북이 audio/10_거북이.wav
+사자 audio/11_사자.wav
+호랑이 audio/12_호랑이.wav
+코끼리 audio/13_코끼리.wav
+원숭이 audio/14_원숭이.wav
+기린 audio/15_기린.wav
+곰 audio/16_곰.wav
