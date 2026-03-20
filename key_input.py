@@ -1,19 +1,3 @@
-"""
-key_input.py — 터미널 raw mode 키 입력 모듈
-
-pynput 대신 표준 라이브러리(tty, termios, select)를 사용합니다.
-macOS / Linux에서 권한 없이도 즉시 동작합니다.
-
-핵심 원리:
-  - termios로 터미널을 raw mode로 전환 → Enter 없이 한 글자씩 즉시 읽음
-  - select로 논블로킹 확인 → 소리 재생 중에도 키 감지 가능
-  - 원래 터미널 설정은 반드시 복원 (finally 블록)
-
-ESC 바이트 시퀀스:
-  - ESC 단독 키: b'\\x1b'
-  - 방향키 등:   b'\\x1b[A' (ESC + [ + A) → ESC로 간주
-"""
-
 import sys
 import os
 import time
@@ -23,21 +7,6 @@ import threading
 _IS_WINDOWS = sys.platform == 'win32'
 
 class KeyListener:
-    """
-    raw mode 터미널에서 비동기 키 입력을 감지합니다.
-    백그라운드 스레드가 계속 stdin을 읽어 플래그를 세웁니다.
-
-    사용법:
-        listener = KeyListener()
-        listener.start()
-        ...
-        if listener.q_pressed:   # 소리 들림
-            ...
-        if listener.esc_pressed: # 중단
-            ...
-        listener.reset_q()       # 다음 음 재생 전 Q 플래그 초기화
-        listener.stop()
-    """
 
     def __init__(self):
         self.q_pressed   = False   # Q 키: 소리 들림
@@ -135,14 +104,8 @@ class KeyListener:
 
 def wait_key_or_timeout(listener: KeyListener, duration: float) -> bool:
     """
-    duration 초 동안 Q 키 입력을 기다립니다.
-
-    Args:
-        listener: 이미 start()된 KeyListener
-        duration: 대기 시간 (초)
-
-    Returns:
-        True  → Q 키 눌림 (소리 들림)
+    duration 초 동안 Q 키 입력 대기
+        True  → Q 키 눌림
         False → 타임아웃 또는 ESC
     """
     end_time = time.time() + duration
