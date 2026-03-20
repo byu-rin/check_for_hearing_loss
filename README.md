@@ -57,21 +57,6 @@ pip3 install -r requirements.txt
 ```bash
 # 전체 검사 (음량 보정 → 순음청력검사 → 어음청력검사)
 python3 main.py
-
-# 데모 모드 (오디오 하드웨어 없이 흐름 확인)
-python3 main.py --demo
-
-# 순음청력검사만 실행
-python3 main.py --pure-tone-only
-
-# 어음청력검사만 실행
-python3 main.py --speech-only
-
-# 어음검사 단어 수 지정 (빠른 테스트)
-python3 main.py --speech-only --words 3
-
-# 음량 보정 단계 건너뜀
-python3 main.py --skip-calibration
 ```
 
 ---
@@ -119,21 +104,11 @@ python3 main.py --skip-calibration
 
 ## 단어 목록 설정 (words.txt)
 
-한 줄에 단어 하나, WAV 파일 경로는 선택사항입니다.  
-탭(Tab) 또는 스페이스로 구분합니다.
-
 ```
-# 경로 없음 → TTS 또는 데모 모드로 재생
-바나나
-
-# 스페이스 구분
-사과 audio/02_사과.wav
-
-# 탭 구분
-수박	audio/03_수박.wav
+[1/10] 잘 들어보세요...
+  들은 단어 입력 (W=다시듣기): 코끼리
+                                       ✓ 정답!
 ```
-
-WAV 파일은 프로그램 폴더 기준 상대경로로 작성합니다.
 
 ---
 
@@ -276,23 +251,7 @@ pip3 install -r requirements.txt
 ## Usage
 
 ```bash
-# Full test (volume calibration → pure tone → speech)
 python3 main.py
-
-# Demo mode (no audio hardware needed — uses synthetic thresholds)
-python3 main.py --demo
-
-# Pure tone audiometry only
-python3 main.py --pure-tone-only
-
-# Speech audiometry only
-python3 main.py --speech-only
-
-# Specify number of words for speech test (quick test)
-python3 main.py --speech-only --words 3
-
-# Skip volume calibration step
-python3 main.py --skip-calibration
 ```
 
 ---
@@ -351,14 +310,9 @@ One word per line. WAV file path is optional.
 Tab or space delimiter both supported.
 
 ```
-# No path → TTS or demo mode
-바나나
-
-# Space-delimited
-사과 audio/02_사과.wav
-
-# Tab-delimited
-수박	audio/03_수박.wav
+ [1/10] 잘 들어보세요...
+  들은 단어 입력 (W=다시듣기): 코끼리
+                                       ✓ 정답!
 ```
 
 WAV paths are resolved relative to the script's directory, so the program works correctly regardless of which folder it is run from.
