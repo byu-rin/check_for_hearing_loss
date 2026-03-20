@@ -1,14 +1,3 @@
-"""
-main.py — 청력검사 프로그램 진입점
-
-실행 방법:
-    python3 main.py                   # 전체 검사
-    python3 main.py --demo            # 데모 모드 (오디오 없이 흐름 확인)
-    python3 main.py --pure-tone-only  # 순음청력검사만
-    python3 main.py --speech-only     # 어음청력검사만
-    python3 main.py --words 5         # 어음검사 단어 수 지정
-"""
-
 import sys
 import argparse
 

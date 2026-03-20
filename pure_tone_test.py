@@ -1,7 +1,7 @@
 """
-pure_tone_test.py — 순음청력검사 (Hughson-Westlake 법)
+순음청력검사 (Hughson-Westlake 법)
 
-키 입력: pynput 대신 raw mode(tty/termios) 방식 사용
+키 입력: raw mode(tty/termios)
   - Q   : 소리 들림
   - ESC : 검사 즉시 중단
 """
