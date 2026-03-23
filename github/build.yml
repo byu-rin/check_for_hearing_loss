@@ -1,0 +1,83 @@
+name: Build 청력검사 (Mac + Windows)
+
+on:
+  push:
+    tags:
+      - 'v*'          # v1.0.0 처럼 태그를 push할 때만 빌드
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            output_name: 청력검사
+            artifact_name: 청력검사-mac
+            ext: ''
+          - os: windows-latest
+            output_name: 청력검사
+            artifact_name: 청력검사-windows
+            ext: '.exe'
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      # 1. 코드 받기
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      # 2. Python 설치
+      - name: Python 3.11 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # 3. 의존성 설치
+      - name: 패키지 설치
+        run: |
+          pip install numpy sounddevice matplotlib pyinstaller
+
+      # 4. PyInstaller로 실행파일 빌드
+      - name: 실행파일 빌드
+        run: |
+          pyinstaller --onefile --windowed --name "${{ matrix.output_name }}" main.py
+
+      # 5. 빌드 결과물을 GitHub Artifacts에 업로드
+      - name: 빌드 결과물 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: dist/${{ matrix.output_name }}${{ matrix.ext }}
+
+  # 6. Release 페이지에 자동 업로드
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Mac 빌드 다운로드
+        uses: actions/download-artifact@v4
+        with:
+          name: 청력검사-mac
+          path: dist/mac
+
+      - name: Windows 빌드 다운로드
+        uses: actions/download-artifact@v4
+        with:
+          name: 청력검사-windows
+          path: dist/windows
+
+      - name: GitHub Release 생성 및 파일 업로드
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/mac/청력검사
+            dist/windows/청력검사.exe
+          body: |
+            ## 청력검사 프로그램 ${{ github.ref_name }}
+
+            ### 다운로드
+            - **Mac 사용자**: `청력검사` 파일 다운로드 후 더블클릭
+            - **Windows 사용자**: `청력검사.exe` 파일 다운로드 후 더블클릭
+
+            > Python 설치 불필요 — 파일 하나만 받으면 바로 실행됩니다.
