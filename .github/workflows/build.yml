@@ -53,6 +53,8 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # ← Release 생성에 필요한 권한
 
     steps:
       - name: Mac 빌드 다운로드
