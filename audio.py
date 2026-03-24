@@ -12,6 +12,7 @@ DSP 설명:
 
 import numpy as np
 import sounddevice as sd
+import sys
 
 # 0 dB HL에 해당하는 기준 진폭 (상대 스케일)
 # 실제 임상 사용 시에는 음압계로 캘리브레이션 필요
@@ -20,6 +21,30 @@ SAMPLE_RATE = 44100  # Hz
 
 # 전역 음량 배율 — run_volume_calibration()에서 조정됨
 volume_scale: float = 1.0
+
+
+def _get_audio_device():
+    """Mac/Windows에서 기본 오디오 장치를 자동으로 감지합니다 (PyInstaller 호환성)."""
+    try:
+        devices = sd.query_devices()
+        default_out = sd.default.device[1]  # 기본 출력 장치 인덱스
+        
+        # 유효한 장치 확인
+        if 0 <= default_out < len(devices) and devices[default_out]['max_output_channels'] > 0:
+            return default_out
+    except Exception:
+        pass
+    
+    # 폴백: 첫 번째 유효한 출력 장치 찾기
+    try:
+        devices = sd.query_devices()
+        for i, dev in enumerate(devices):
+            if dev['max_output_channels'] > 0:
+                return i
+    except Exception:
+        pass
+    
+    return None
 
 
 def set_volume_scale(scale: float) -> None:
@@ -76,9 +101,11 @@ def generate_tone(frequency: float, duration: float, db_hl: float,
 
 def play_tone(frequency: float, duration: float, db_hl: float,
               ear: str = '양쪽',
-              sample_rate: int = SAMPLE_RATE) -> None:
+              sample_rate: int = SAMPLE_RATE,
+              max_retries: int = 2) -> None:
     """
     순음을 동기 방식으로 재생합니다 (재생 완료까지 블로킹).
+    PyInstaller 환경에서도 안정적으로 작동하도록 개선됨.
 
     Args:
         frequency:   주파수 (Hz)
@@ -86,10 +113,32 @@ def play_tone(frequency: float, duration: float, db_hl: float,
         db_hl:       레벨 (dB HL)
         ear:         재생 귀 — '오른쪽', '왼쪽', '양쪽'
         sample_rate: 샘플레이트
+        max_retries: 실패 시 재시도 횟수
     """
+    import time
+    
     tone = generate_tone(frequency, duration, db_hl, ear, sample_rate)
-    sd.play(tone, samplerate=sample_rate)
-    sd.wait()
+    
+    for attempt in range(max_retries):
+        try:
+            device = _get_audio_device()
+            sd.play(tone, samplerate=sample_rate, device=device)
+            sd.wait()
+            return  # 성공
+        except sd.PortAudioError as e:
+            if attempt < max_retries - 1:
+                # 재시도 전 잠시 대기 (장치 초기화 시간)
+                time.sleep(0.5)
+            else:
+                # 모든 재시도 실패 → 에러 메시지 출력하고 계속 진행
+                print(f"\n[오디오 경고] 스피커에서 음성 재생 실패 (재시도 {max_retries}회 실패):", file=sys.stderr)
+                print(f"  {str(e)}", file=sys.stderr)
+                print("  헤드폰/스피커 연결을 확인해 주세요.\n", file=sys.stderr)
+                # 여기서 raise하지 않고 조용히 넘어감 (사용자 경험 개선)
+        except Exception as e:
+            print(f"\n[오디오 오류] 예상치 못한 오류: {str(e)}", file=sys.stderr)
+            if attempt >= max_retries - 1:
+                raise
 
 
 def play_wav(filepath: str) -> None:

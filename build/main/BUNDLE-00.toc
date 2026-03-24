@@ -1,0 +1,1 @@
+([('main', '/Users/byurin/check_for_hearing_loss/dist/main', 'EXECUTABLE')],)
