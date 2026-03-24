@@ -40,7 +40,12 @@ jobs:
       # 4. PyInstaller로 실행파일 빌드
       - name: 실행파일 빌드
         run: |
-          pyinstaller --onefile --windowed --name "${{ matrix.output_name }}" main.py
+          pyinstaller --onefile --windowed \
+            --name "${{ matrix.output_name }}" \
+            --hidden-import=numpy \
+            --hidden-import=sounddevice \
+            --hidden-import=matplotlib \
+            main.py
 
       # 5. 빌드 결과물을 GitHub Artifacts에 업로드
       - name: 빌드 결과물 업로드
@@ -54,7 +59,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     permissions:
-      contents: write   # ← Release 생성에 필요한 권한
+      contents: write
 
     steps:
       - name: Mac 빌드 다운로드
@@ -83,3 +88,46 @@ jobs:
             - **Windows 사용자**: `청력검사.exe` 파일 다운로드 후 더블클릭
 
             > Python 설치 불필요 — 파일 하나만 받으면 바로 실행됩니다.
+
+  # 7. macOS 빌드 테스트
+  test-macos:
+    runs-on: macos-latest
+    
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Python 3.11 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 패키지 설치
+        run: |
+          pip install numpy sounddevice matplotlib pyinstaller
+
+      - name: macOS 빌드 (--demo로 테스트)
+        run: |
+          pyinstaller --onefile --windowed \
+            --name "청력검사-test" \
+            --hidden-import=numpy \
+            --hidden-import=sounddevice \
+            --hidden-import=matplotlib \
+            main.py
+
+      - name: 빌드 파일 존재 확인
+        run: |
+          if [ -f "dist/청력검사-test" ]; then
+            echo "✅ macOS 빌드 성공"
+            ls -lh dist/청력검사-test
+          else
+            echo "❌ 빌드 파일 없음"
+            exit 1
+          fi
+
+      - name: 빌드 아티팩트 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: 청력검사-mac-test
+          path: dist/청력검사-test
+          retention-days: 7
