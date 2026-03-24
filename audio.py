@@ -22,6 +22,9 @@ SAMPLE_RATE = 44100  # Hz
 # 전역 음량 배율 — run_volume_calibration()에서 조정됨
 volume_scale: float = 1.0
 
+# 시도할 샘플레이트 우선순위 목록
+# 이어폰/블루투스 장치가 44100을 지원 안 할 경우 순서대로 시도
+_FALLBACK_SAMPLE_RATES = [44100, 48000, 22050, 16000]
 
 def _get_audio_device():
     """Mac/Windows에서 기본 오디오 장치를 자동으로 감지합니다 (PyInstaller 호환성)."""
@@ -45,6 +48,40 @@ def _get_audio_device():
         pass
     
     return None
+
+
+def _get_supported_sample_rate(device_index) -> int:
+    """
+    장치가 실제로 지원하는 샘플레이트를 반환합니다.
+ 
+    macOS에서 이어폰을 꽂으면 장치가 전환되면서 44100 Hz를
+    지원하지 않는 경우가 있습니다 (특히 블루투스/USB 이어폰).
+    이 함수는 우선순위 목록을 순서대로 시도해 사용 가능한
+    첫 번째 샘플레이트를 반환합니다.
+ 
+    Args:
+        device_index: sd.query_devices() 장치 인덱스
+ 
+    Returns:
+        사용 가능한 샘플레이트 (int). 모두 실패하면 44100 반환.
+    """
+    if device_index is None:
+        return SAMPLE_RATE
+ 
+    for rate in _FALLBACK_SAMPLE_RATES:
+        try:
+            sd.check_output_settings(device=device_index, samplerate=rate, channels=2)
+            return rate
+        except Exception:
+            continue
+ 
+    # 마지막 수단: 장치 기본 샘플레이트 사용
+    try:
+        device_info = sd.query_devices(device_index)
+        default_rate = int(device_info.get('default_samplerate', SAMPLE_RATE))
+        return default_rate
+    except Exception:
+        return SAMPLE_RATE
 
 
 def set_volume_scale(scale: float) -> None:
@@ -122,9 +159,19 @@ def play_tone(frequency: float, duration: float, db_hl: float,
     for attempt in range(max_retries):
         try:
             device = _get_audio_device()
+
+             # 매 재생마다 장치 지원 샘플레이트를 확인
+            # 이어폰 연결/해제로 장치가 바뀌면 지원 샘플레이트도 달라질 수 있음
+            actual_rate = _get_supported_sample_rate(device)
+
+            # 샘플레이트가 바뀐 경우에만 tone 재생성 (성능 최적화)
+            tone = generate_tone(frequency, duration, db_hl, ear, actual_rate)
+
             sd.play(tone, samplerate=sample_rate, device=device)
             sd.wait()
             return  # 성공
+        
+
         except sd.PortAudioError as e:
             if attempt < max_retries - 1:
                 # 재시도 전 잠시 대기 (장치 초기화 시간)
@@ -134,7 +181,8 @@ def play_tone(frequency: float, duration: float, db_hl: float,
                 print(f"\n[오디오 경고] 스피커에서 음성 재생 실패 (재시도 {max_retries}회 실패):", file=sys.stderr)
                 print(f"  {str(e)}", file=sys.stderr)
                 print("  헤드폰/스피커 연결을 확인해 주세요.\n", file=sys.stderr)
-                # 여기서 raise하지 않고 조용히 넘어감 (사용자 경험 개선)
+                # 여기서 raise하지 않고 조용히 넘어가
+
         except Exception as e:
             print(f"\n[오디오 오류] 예상치 못한 오류: {str(e)}", file=sys.stderr)
             if attempt >= max_retries - 1:
@@ -149,7 +197,7 @@ def play_wav(filepath: str) -> None:
         filepath: .wav 파일 경로
     """
     import wave
-    import struct
+    # import struct
 
     with wave.open(filepath, 'rb') as wf:
         n_channels  = wf.getnchannels()
@@ -171,6 +219,48 @@ def play_wav(filepath: str) -> None:
     # 스테레오 reshape (채널 수에 따라)
     if n_channels > 1:
         data = data.reshape(-1, n_channels)
+
+        # ★ 핵심 수정: WAV 재생 시에도 장치 지원 샘플레이트 확인
+    device = _get_audio_device()
+    actual_rate = _get_supported_sample_rate(device)
+ 
+    # WAV 원본 샘플레이트와 장치 지원 샘플레이트가 다르면 리샘플링
+    if frame_rate != actual_rate:
+        data = _resample(data, frame_rate, actual_rate)
  
     sd.play(data, samplerate=frame_rate)
     sd.wait()
+
+
+def _resample(data: np.ndarray, orig_rate: int, target_rate: int) -> np.ndarray:
+    """
+    선형 보간으로 오디오 데이터를 리샘플링합니다.
+ 
+    numpy만 사용하는 간단한 구현으로, scipy 없이 동작합니다.
+    청력검사용 단순 음성에는 충분한 품질을 제공합니다.
+ 
+    Args:
+        data:        원본 오디오 배열 (1D 또는 2D)
+        orig_rate:   원본 샘플레이트
+        target_rate: 목표 샘플레이트
+ 
+    Returns:
+        리샘플링된 배열
+    """
+    if orig_rate == target_rate:
+        return data
+ 
+    ratio = target_rate / orig_rate
+ 
+    if data.ndim == 1:
+        n_out = int(len(data) * ratio)
+        x_old = np.linspace(0, 1, len(data))
+        x_new = np.linspace(0, 1, n_out)
+        return np.interp(x_new, x_old, data).astype(np.float32)
+    else:
+        # 다채널: 채널별로 리샘플링 후 합치기
+        n_out = int(data.shape[0] * ratio)
+        x_old = np.linspace(0, 1, data.shape[0])
+        x_new = np.linspace(0, 1, n_out)
+        channels = [np.interp(x_new, x_old, data[:, ch]) for ch in range(data.shape[1])]
+        return np.column_stack(channels).astype(np.float32)

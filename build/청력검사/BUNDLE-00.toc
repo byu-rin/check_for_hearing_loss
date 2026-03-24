@@ -1,0 +1,1 @@
+([('청력검사', '/Users/byurin/check_for_hearing_loss/dist/청력검사', 'EXECUTABLE')],)

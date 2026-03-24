@@ -31,70 +31,27 @@
     }
   },
   "어음인지검사": {
-    "인지도": 80.0,
-    "총단어수": 10,
-    "정답수": 8,
+    "인지도": 0.0,
+    "총단어수": 1,
+    "정답수": 0,
     "상세": [
       {
-        "word": "곰",
-        "response": "봄",
-        "correct": false
-      },
-      {
-        "word": "나무",
-        "response": "난무",
-        "correct": false
-      },
-      {
-        "word": "의자",
-        "response": "의자",
-        "correct": true
-      },
-      {
-        "word": "꽃",
-        "response": "꽃",
-        "correct": true
-      },
-      {
-        "word": "호랑이",
-        "response": "호랑이",
-        "correct": true
-      },
-      {
-        "word": "물고기",
-        "response": "물고기",
-        "correct": true
-      },
-      {
-        "word": "태양",
-        "response": "태양",
-        "correct": true
-      },
-      {
-        "word": "바다",
-        "response": "바다",
-        "correct": true
-      },
-      {
         "word": "구름",
-        "response": "구름",
-        "correct": true
-      },
-      {
-        "word": "강물",
-        "response": "강물",
-        "correct": true
+        "response": "apple",
+        "correct": false
       }
     ]
   },
   "초성오류분석": {
     "혼동쌍": {
-      "ㄱ->ㅂ": 1
+      "ㄱ->∅": 1,
+      "ㄹ->∅": 1
     },
     "오류수": {
-      "ㄱ": 1
+      "ㄱ": 1,
+      "ㄹ": 1
     },
-    "총초성수": 20,
-    "오류초성수": 1
+    "총초성수": 2,
+    "오류초성수": 2
   }
 }
