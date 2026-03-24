@@ -350,7 +350,7 @@ System Settings -> Privacy and Security -> "Listen Confirmation" is blocked to p
 # Output
 
 - Audiogram visualization
-![audiogram_example]](/audiogram_example.png)
+![audiogram_example](/audiogram_example.png)
 
 - PTA (Pure Tone Average)
 ```json
